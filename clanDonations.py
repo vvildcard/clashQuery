@@ -15,33 +15,15 @@
 #   Handle a missing workbook
 #   Handle a worksheet named 'Sheet 1'
 #   Add help
+#   Add other indicators of activity (war participation, etc)
 
 
 # -----------------
-# Import modules // Define Functions // Set some variables
+# Import modules // Set variables
 # -----------------
 
 import requests, datetime, openpyxl, string
 from openpyxl import load_workbook
-
-def index_to_col(index):
-    return string.ascii_uppercase[index]
-
-def excel_to_dict(excel_path, headers=[]):
-    wb = openpyxl.load_workbook(excel_path)
-    ws = wb["Sheet1"]
-    result_dict = []
-    for row in range(2, ws.max_row+1):
-        line = dict()
-        for header in headers:
-            cell_value = ws[index_to_col(headers.index(header)) + str(row)].value
-            if type(cell_value) is int:
-                cell_value = str(cell_value)
-            elif cell_value is None:
-                cell_value = ''
-            line[header] = cell_value
-        result_dict.append(line)
-    return result_dict
 
 date = datetime.datetime.now()
 todayDate = date.strftime("%Y"+"-"+"%m"+"-"+"%d")
@@ -53,9 +35,13 @@ headers = {"Authorization": "Bearer: "+token.read()}
 # -----------------
 # Load the data
 # -----------------
+
+# Load the Spreadsheet
 wb = load_workbook("clanDonations.xlsx", data_only=True)
 clan = wb.sheetnames[0]
 ws = wb[clan]
+
+# Get clan info from the API
 clanMembers = requests.request("GET", url+"clans/%23"+clan+"/members", headers=headers).json()
 # print(clanMembers)
 
