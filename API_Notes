@@ -1,0 +1,4 @@
+base_url = "https://api.clashroyale.com/v1/"
+clan/player = "%23(your ID here)"
+  Note: %23 = #
+headers = {Authorization: Bearer: (your token)}
