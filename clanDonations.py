@@ -4,7 +4,7 @@
 # 2018/11/01
 #
 # Notes:
-#   You MUST have a worksheet named 'memberDonations.xlsx' in the script's working directory.
+#   You MUST have a worksheet named 'clanDonations.xlsx' in the script's working directory.
 #   You MUST have a file named 'token.txt' in the script's working directory.
 #   The script only reads the first worksheet.
 #   The first worksheet must be named as the clan's ID.
@@ -15,6 +15,7 @@
 #   Handle a missing workbook
 #   Handle a worksheet named 'Sheet 1'
 #   Add help
+
 
 # -----------------
 # Import modules // Define Functions // Set some variables
@@ -52,7 +53,7 @@ headers = {"Authorization": "Bearer: "+token.read()}
 # -----------------
 # Load the data
 # -----------------
-wb = load_workbook("memberDonations.xlsx", data_only=True)
+wb = load_workbook("clanDonations.xlsx", data_only=True)
 clan = wb.sheetnames[0]
 ws = wb[clan]
 clanMembers = requests.request("GET", url+"clans/%23"+clan+"/members", headers=headers).json()
@@ -112,4 +113,4 @@ for member in tempDict:
 #   If a member isn't found, add them to a new row
 #
 
-wb.save("memberDonations.xlsx")
+wb.save("clanDonations.xlsx")
