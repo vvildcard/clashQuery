@@ -5,7 +5,6 @@
 #
 # Notes:
 #   You MUST have a worksheet named 'clanDonations.xlsx' in the script's working directory.
-#   You MUST have a file named 'token.txt' in the script's working directory.
 #   The script only reads the first worksheet.
 #   The first worksheet must be named as the clan's ID.
 #
@@ -19,15 +18,63 @@
 
 
 # -----------------
-# Import modules // Set variables
+# Import modules // Define functions // Set variables
 # -----------------
 
-import requests, datetime, openpyxl, string
+import requests, datetime, os
 from openpyxl import load_workbook
+
+def getClanID():
+    clanID = input("Input your Clan ID: ")
+    while True:
+        if clanID[0] == "#":  # Remove the #
+            clanID = clanID[1:]
+        try:
+            clanIDSearch = requests.request("GET", url+"clans/%23"+clanID, headers=headers).json()
+            break
+        except KeyError:
+            clanID = input("Clan not found. Try again: ")
+    print("Found clan: " + str(clanIDSearch['name']))
+    return(clanID)
+
+def getToken():
+    tempToken = input("Missing token.\n"
+                  "Note: Your token will be stored as plain-text in a token.txt.\n"
+                  "If you don't have a token, get one here: developer.clashroyale.com"
+                  "Input your token: ")
+    while tempToken == '':  # Ask again if the token wasn't given
+        input("Input your token: ")
+    testToken = tokenTest(tempToken)
+    if testToken == True:
+        token = tempToken
+    tokenFile = open('token.txt', 'w+')  # Create token.txt
+    tokenFile.write(token)  # Write the token into the file
+    tokenFile.close()
+    return(token)
+
+def tokenTest(token):
+    tokenTestHeaders = {"Authorization": "Bearer: " + token}
+    try:
+        tokenTestRequest = requests.get(url+"cards", headers=tokenTestHeaders)  # Test the token
+        tokenTestRequest.raise_for_status()
+    except requests.exceptions.HTTPError as errh:
+        print("HTTP Error:", errh)
+    except requests.exceptions.ConnectionError as errc:
+        print("Error Connecting:", errc)
+    except requests.exceptions.Timeout as errt:
+        print("Timeout Error:", errt)
+    except requests.exceptions.RequestException as err:
+        print("Error!", err)
+    return(True)
 
 date = datetime.datetime.now()
 todayDate = date.strftime("%Y"+"-"+"%m"+"-"+"%d")
-token = open('token.txt', 'r')
+while True:
+    try:
+        token = open('token.txt', 'r')
+        break
+    except FileNotFoundError:
+        getToken()
 url = "https://api.clashroyale.com/v1/"
 headers = {"Authorization": "Bearer: "+token.read()}
 
@@ -37,12 +84,28 @@ headers = {"Authorization": "Bearer: "+token.read()}
 # -----------------
 
 # Load the Spreadsheet
-wb = load_workbook("clanDonations.xlsx", data_only=True)
-clan = wb.sheetnames[0]
-ws = wb[clan]
+while True:
+    try:
+        wb = load_workbook("clanDonations.xlsx", data_only=True)
+        break  # Workbook found
+    except FileNotFoundError:
+        cwd = os.getcwd()
+        print("Missing workbook.\n"
+              "If you already have a workbook, place it here:"
+              + str(cwd))
+        from openpyxl import Workbook
+        wb = Workbook()  # Create a workbook
+        ws = wb.active  # Set the active sheet
+        ws.title = getClanID()  # Set the Sheet name to the Clan ID
+        ws['A1'] = "Name"
+        ws['B1'] = "Role"
+        ws['C1'] = "LastSeen"
+        wb.save("clanDonations.xlsx")
+clanID = wb.sheetnames[0]
+ws = wb[clanID]
 
 # Get clan info from the API
-clanMembers = requests.request("GET", url+"clans/%23"+clan+"/members", headers=headers).json()
+clanMembers = requests.request("GET", url+"clans/%23"+clanID+"/members", headers=headers).json()
 # print(clanMembers)
 
 
@@ -90,14 +153,6 @@ for member in tempDict:
             ws.cell(row=i, column=3).value = tempDict[member][1]    # lastSeen
             ws.cell(row=i, column=4).value = tempDict[member][2]    # donations
 
-
-#   	str(todayDate)
-#   	str(member['name'].encode('utf-8'))
-#   	member['role']
-#   	str(member['donations']
-
-#   If a member isn't found, add them to a new row
-#
 
 token.close()
 wb.save("clanDonations.xlsx")
