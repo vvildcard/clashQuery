@@ -99,4 +99,6 @@ for member in tempDict:
 #   If a member isn't found, add them to a new row
 #
 
+token.close()
 wb.save("clanDonations.xlsx")
+wb.close()
