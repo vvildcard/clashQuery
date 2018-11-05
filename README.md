@@ -4,6 +4,13 @@ Scripts to query the Clash Royale API
 ## clanDonations
 ### Usage
 You should be able to just run the script and provide info, as requested. 
+The _working directory_ is important... it's the only file location used, so you 
+have to run the script from the location of your token.txt and clanDonations.xlsx. 
+
+The script uses two files: 
+1. token.txt stores your token/key. This file should be one line with the full text of your token.
+ Since its tied to your IP and the API is read-only, leaving it in plain-text is pretty low risk. 
+2. clanDonations.xlsx stores your donation data. The first sheet must be named as the ID of your clan. 
 
 #### Tokens
 1. Register or Login: https://developer.clashroyale.com

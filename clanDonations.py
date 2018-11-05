@@ -9,7 +9,6 @@
 #   The first worksheet must be named as the clan's ID.
 #
 # To Do:
-#   Test a worksheet named 'Sheet1'
 #   Add other indicators of activity (war participation, etc)
 #   Conditional formatting for donation cells
 
@@ -18,7 +17,9 @@
 # Import modules // Define functions // Set variables
 # -----------------
 
-import requests, datetime, os
+import requests
+import datetime
+import os
 from openpyxl import load_workbook
 
 
