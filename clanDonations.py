@@ -36,19 +36,6 @@ def getClanID():
     return tempClanID
 
 
-def askForToken():
-    tokenInput = input("Missing token.\n"
-                       "Note: Your token will be stored as plain-text in a token.txt.\n"
-                       "If you don't have a token, get one here: developer.clashroyale.com\n"
-                       "Input your token: ")
-    while tokenInput == '':  # Ask again if the token wasn't given
-        tokenInput = input("Input your token: ")
-    tokenFile = open('token.txt', 'w+')  # Open token.txt
-    tokenFile.write(tokenInput)  # Write the user response to the file
-    tokenFile.close()  # Close the file
-    return tokenInput
-
-
 def getToken():
     while True:
         getTokenToken = ''  # Start with a blank variable (so we can attempt to get it from token.txt)
@@ -79,6 +66,19 @@ def getToken():
     return getTokenToken
 
 
+def askForToken():
+    tokenInput = input("Missing token.\n"
+                       "Note: Your token will be stored as plain-text in a token.txt.\n"
+                       "If you don't have a token, get one here: developer.clashroyale.com\n"
+                       "Input your token: ")
+    while tokenInput == '':  # Ask again if the token wasn't given
+        tokenInput = input("Input your token: ")
+    tokenFile = open('token.txt', 'w+')  # Open token.txt
+    tokenFile.write(tokenInput)  # Write the user response to the file
+    tokenFile.close()  # Close the file
+    return tokenInput
+
+
 def tokenTest(tempTokenTest):
     try:  # Create a header
         tempTokenTest.seek(0)  # Make sure to read the whole file
@@ -104,6 +104,17 @@ def tokenTest(tempTokenTest):
     return True
 
 
+def createWorkbook():
+    from openpyxl import Workbook
+    wb = Workbook()  # Create a workbook
+    ws = wb.active  # Set the active sheet
+    ws.title = getClanID()  # Set the Sheet name to the Clan ID
+    ws['A1'] = "Name"
+    ws['B1'] = "Role"
+    ws['C1'] = "LastSeen"
+    wb.save("clanDonations.xlsx")
+    return True
+
 
 date = datetime.datetime.now()
 todayDate = date.strftime("%Y" + "-" + "%m" + "-" + "%d")
@@ -119,22 +130,16 @@ headers = {"Authorization": "Bearer: " + token.read()}
 while True:
     try:
         wb = load_workbook("clanDonations.xlsx", data_only=True)
+        ws = wb.active  # Set the active sheet
+        if ws.title[0:5] == "Sheet":
+            ws.title = getClanID()  # Set the Sheet name to the Clan ID
         break  # Workbook found
     except FileNotFoundError:
         cwd = os.getcwd()  # Current working directory
         print("Missing workbook.\n"
               "If you already have a workbook, place it here:"
               + str(cwd))
-        from openpyxl import Workbook
-
-        wb = Workbook()  # Create a workbook
-        ws = wb.active  # Set the active sheet
-        if ws.title[0 - 4] == "Sheet":
-            ws.title = getClanID()  # Set the Sheet name to the Clan ID
-        ws['A1'] = "Name"
-        ws['B1'] = "Role"
-        ws['C1'] = "LastSeen"
-        wb.save("clanDonations.xlsx")
+        createWorkbook()
 clanID = wb.sheetnames[0]  # Get the clan ID from the Sheet Name
 ws = wb[clanID]  # Set the active sheet
 
