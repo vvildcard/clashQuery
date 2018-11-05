@@ -23,7 +23,7 @@ from openpyxl import load_workbook
 
 
 def getClanID():
-    tempClanID = input("Input your Clan ID: ")
+    tempClanID = input(bcolors.BOLD + "Input your Clan ID: " + bcolors.ENDC)
     while True:
         if tempClanID[0] == "#":  # Remove the #
             tempClanID = tempClanID[1:]
@@ -32,7 +32,9 @@ def getClanID():
             print("Found clan: " + str(clanIDSearch['name']))
             break
         except KeyError:
-            tempClanID = input("Clan not found. Try again: ")
+            tempClanID = input(
+                bcolors.WARNING + "Clan not found.\n" +
+                bcolors.BOLD + "Try again: " + bcolors.ENDC)
     return tempClanID
 
 
@@ -42,7 +44,7 @@ def getToken():
         try:
             tokenFile = open('token.txt', 'r')
             if tokenFile.read() == '':
-                askForToken()
+                askForToken("Invalid")
             if tokenTest(tokenFile):
                 getTokenToken = tokenFile
                 tokenFile.seek(0)
@@ -53,8 +55,8 @@ def getToken():
                 tokenFile = open('token.txt', 'w+')  # Open token.txt
                 tokenFile.write(blank)               # Clear the file
                 tokenFile.close()                    # Close the file
-        except FileNotFoundError:
-            tokenInput = askForToken()
+        except FileNotFoundError:  # This always means token.txt doesn't exist.
+            tokenInput = askForToken("Missing")
             testedToken = tokenTest(tokenInput)
             if testedToken:
                 getTokenToken = tokenInput
@@ -66,13 +68,15 @@ def getToken():
     return getTokenToken
 
 
-def askForToken():
-    tokenInput = input("Missing token.\n"
-                       "Note: Your token will be stored as plain-text in a token.txt.\n"
-                       "If you don't have a token, get one here: developer.clashroyale.com\n"
-                       "Input your token: ")
+def askForToken(note):
+    tokenInput = input(
+        bcolors.WARNING + note + " token.\n" +
+        bcolors.ENDC + "If you don't have a token, get one here: " + bcolors.OKBLUE + "developer.clashroyale.com\n" +
+        bcolors.FAIL + "Your token will be stored in plain-text here:\n" +
+        bcolors.ENDC + os.getcwd() + '\\token.txt' + "\n" +
+        bcolors.BOLD + "\nInput your token: " + bcolors.ENDC)
     while tokenInput == '':  # Ask again if the token wasn't given
-        tokenInput = input("Input your token: ")
+        tokenInput = input(bcolors.BOLD + "Input your token: " + bcolors.ENDC)
     tokenFile = open('token.txt', 'w+')  # Open token.txt
     tokenFile.write(tokenInput)  # Write the user response to the file
     tokenFile.close()  # Close the file
@@ -115,6 +119,19 @@ def createWorkbook():
     wb.save("clanDonations.xlsx")
     return True
 
+# Text Colors
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+# Sample usage:
+# print bcolors.WARNING + "Warning: Something broke. Continue?"
+#      + bcolors.ENDC
 
 date = datetime.datetime.now()
 todayDate = date.strftime("%Y" + "-" + "%m" + "-" + "%d")
@@ -136,9 +153,9 @@ while True:
         break  # Workbook found
     except FileNotFoundError:
         cwd = os.getcwd()  # Current working directory
-        print("Missing workbook.\n"
-              "If you already have a workbook, place it here:"
-              + str(cwd))
+        print(bcolors.WARNING + "Missing workbook.\n" + bcolors.ENDC +
+              bcolors.FAIL + "If you already have a workbook, place it here:\n" +
+              bcolors.ENDC + str(cwd))
         createWorkbook()
 clanID = wb.sheetnames[0]  # Get the clan ID from the Sheet Name
 ws = wb[clanID]  # Set the active sheet
