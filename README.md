@@ -27,10 +27,10 @@ You'll probably want to get data on a regular basis. Donations are reset for all
 6. Set the Action to 'Start a Program'. 
 7. Set the program to your python.exe (probably here:
  `C:\Users\username\AppData\Local\Programs\Python\Python37-32\python.exe`)
-8. In 'Add arguments', add the path to your script (in " if there are any spaces
+8. In 'Add arguments', add the path to your script (in " " if there are any spaces
  in your path)
 9. In 'Start in', add the path to the place where want to save your token.txt
- and workbook. 
+ and workbook. (_DO NOT_ use " " in this path, even if there are spaces.) 
 
 #### Linux: cron
 1. Run this in terminal: `crontab -e`

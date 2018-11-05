@@ -9,12 +9,9 @@
 #   The first worksheet must be named as the clan's ID.
 #
 # To Do:
-#   User input for clan ID
-#   Save clan ID as the worksheet name
-#   Handle a missing workbook
-#   Handle a worksheet named 'Sheet 1'
-#   Add help
+#   Test a worksheet named 'Sheet1'
 #   Add other indicators of activity (war participation, etc)
+#   Conditional formatting for donation cells
 
 
 # -----------------
@@ -24,60 +21,95 @@
 import requests, datetime, os
 from openpyxl import load_workbook
 
+
 def getClanID():
-    clanID = input("Input your Clan ID: ")
+    tempClanID = input("Input your Clan ID: ")
     while True:
-        if clanID[0] == "#":  # Remove the #
-            clanID = clanID[1:]
+        if tempClanID[0] == "#":  # Remove the #
+            tempClanID = tempClanID[1:]
         try:
-            clanIDSearch = requests.request("GET", url+"clans/%23"+clanID, headers=headers).json()
+            clanIDSearch = requests.request("GET", url + "clans/%23" + tempClanID, headers=headers).json()
+            print("Found clan: " + str(clanIDSearch['name']))
             break
         except KeyError:
-            clanID = input("Clan not found. Try again: ")
-    print("Found clan: " + str(clanIDSearch['name']))
-    return(clanID)
+            tempClanID = input("Clan not found. Try again: ")
+    return tempClanID
+
+
+def askForToken():
+    tokenInput = input("Missing token.\n"
+                       "Note: Your token will be stored as plain-text in a token.txt.\n"
+                       "If you don't have a token, get one here: developer.clashroyale.com\n"
+                       "Input your token: ")
+    while tokenInput == '':  # Ask again if the token wasn't given
+        tokenInput = input("Input your token: ")
+    tokenFile = open('token.txt', 'w+')  # Open token.txt
+    tokenFile.write(tokenInput)  # Write the user response to the file
+    tokenFile.close()  # Close the file
+    return tokenInput
+
 
 def getToken():
-    tempToken = input("Missing token.\n"
-                  "Note: Your token will be stored as plain-text in a token.txt.\n"
-                  "If you don't have a token, get one here: developer.clashroyale.com"
-                  "Input your token: ")
-    while tempToken == '':  # Ask again if the token wasn't given
-        input("Input your token: ")
-    testToken = tokenTest(tempToken)
-    if testToken == True:
-        token = tempToken
-    tokenFile = open('token.txt', 'w+')  # Create token.txt
-    tokenFile.write(token)  # Write the token into the file
-    tokenFile.close()
-    return(token)
+    while True:
+        getTokenToken = ''  # Start with a blank variable (so we can attempt to get it from token.txt)
+        try:
+            tokenFile = open('token.txt', 'r')
+            if tokenFile.read() == '':
+                askForToken()
+            if tokenTest(tokenFile):
+                getTokenToken = tokenFile
+                tokenFile.seek(0)
+                break  # The token was valid
+            else:
+                tokenFile.close()                    # Close the file
+                blank = ''                           # Clear the token so we can try again.
+                tokenFile = open('token.txt', 'w+')  # Open token.txt
+                tokenFile.write(blank)               # Clear the file
+                tokenFile.close()                    # Close the file
+        except FileNotFoundError:
+            tokenInput = askForToken()
+            testedToken = tokenTest(tokenInput)
+            if testedToken:
+                getTokenToken = tokenInput
+            else:
+                getTokenToken = ''  # Clear the token and try again.
+            tokenFile = open('token.txt', 'w+')  # Create/open token.txt
+            tokenFile.write(getTokenToken)  # Write the token into the file
+            tokenFile.close()
+    return getTokenToken
 
-def tokenTest(token):
-    tokenTestHeaders = {"Authorization": "Bearer: " + token}
+
+def tokenTest(tempTokenTest):
+    try:  # Create a header
+        tempTokenTest.seek(0)  # Make sure to read the whole file
+        tokenTestHeaders = {"Authorization": "Bearer: " + tempTokenTest.read()}  # Use the token file if it exists
+    except AttributeError:
+        tokenTestHeaders = {"Authorization": "Bearer: " + tempTokenTest}  # Use the string
     try:
-        tokenTestRequest = requests.get(url+"cards", headers=tokenTestHeaders)  # Test the token
+        tokenTestURL = "https://api.clashroyale.com/v1/cards"
+        tokenTestRequest = requests.request("GET", tokenTestURL, headers=tokenTestHeaders)  # Test the token
         tokenTestRequest.raise_for_status()
     except requests.exceptions.HTTPError as errh:
         print("HTTP Error:", errh)
+        return False
     except requests.exceptions.ConnectionError as errc:
         print("Error Connecting:", errc)
+        return False
     except requests.exceptions.Timeout as errt:
         print("Timeout Error:", errt)
+        return False
     except requests.exceptions.RequestException as err:
         print("Error!", err)
-    return(True)
+        return False
+    return True
+
+
 
 date = datetime.datetime.now()
-todayDate = date.strftime("%Y"+"-"+"%m"+"-"+"%d")
-while True:
-    try:
-        token = open('token.txt', 'r')
-        break
-    except FileNotFoundError:
-        getToken()
+todayDate = date.strftime("%Y" + "-" + "%m" + "-" + "%d")
 url = "https://api.clashroyale.com/v1/"
-headers = {"Authorization": "Bearer: "+token.read()}
-
+token = getToken()
+headers = {"Authorization": "Bearer: " + token.read()}
 
 # -----------------
 # Load the data
@@ -89,23 +121,25 @@ while True:
         wb = load_workbook("clanDonations.xlsx", data_only=True)
         break  # Workbook found
     except FileNotFoundError:
-        cwd = os.getcwd()
+        cwd = os.getcwd()  # Current working directory
         print("Missing workbook.\n"
               "If you already have a workbook, place it here:"
               + str(cwd))
         from openpyxl import Workbook
+
         wb = Workbook()  # Create a workbook
         ws = wb.active  # Set the active sheet
-        ws.title = getClanID()  # Set the Sheet name to the Clan ID
+        if ws.title[0 - 4] == "Sheet":
+            ws.title = getClanID()  # Set the Sheet name to the Clan ID
         ws['A1'] = "Name"
         ws['B1'] = "Role"
         ws['C1'] = "LastSeen"
         wb.save("clanDonations.xlsx")
-clanID = wb.sheetnames[0]
-ws = wb[clanID]
+clanID = wb.sheetnames[0]  # Get the clan ID from the Sheet Name
+ws = wb[clanID]  # Set the active sheet
 
 # Get clan info from the API
-clanMembers = requests.request("GET", url+"clans/%23"+clanID+"/members", headers=headers).json()
+clanMembers = requests.request("GET", url + "clans/%23" + clanID + "/members", headers=headers).json()
 # print(clanMembers)
 
 
@@ -127,15 +161,14 @@ for member in clanMembers['items']:
 
 memberList = []
 for i in range(1, ws.max_row):
-    memberList.append(str(ws.cell(row=i+1, column=1).value))
+    memberList.append(str(ws.cell(row=i + 1, column=1).value))
 # print(memberList)
 
 # Add new members
 for member in tempDict:
     # print(member)
     if member not in memberList:
-        ws.cell(row=ws.max_row+1, column=1).value = str(member)
-
+        ws.cell(row=ws.max_row + 1, column=1).value = str(member)
 
 # -----------------
 # Merge the data
@@ -149,10 +182,9 @@ for member in tempDict:
         i += 1
         if str(ws.cell(row=i, column=1).value) == str(member):
             # print(ws.cell(row=i, column=1).value)
-            ws.cell(row=i, column=2).value = tempDict[member][0]    # role
-            ws.cell(row=i, column=3).value = tempDict[member][1]    # lastSeen
-            ws.cell(row=i, column=4).value = tempDict[member][2]    # donations
-
+            ws.cell(row=i, column=2).value = tempDict[member][0]  # role
+            ws.cell(row=i, column=3).value = tempDict[member][1]  # lastSeen
+            ws.cell(row=i, column=4).value = tempDict[member][2]  # donations
 
 token.close()
 wb.save("clanDonations.xlsx")
